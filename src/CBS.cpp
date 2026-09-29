@@ -1373,6 +1373,9 @@ bool CBS::solve(double _time_limit, int _cost_lowerbound, int _cost_upperbound)
 				case conflict_type::MUTEX:
 					num_mutex_conflicts++;
 					break;
+				case conflict_type::CLEARANCE:
+					num_clearance_conflicts++;
+					break;
 				default:
 					break;
 				}

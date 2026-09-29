@@ -278,8 +278,10 @@ void CBS::computeConflictPriority(shared_ptr<Conflict>& con, CBSNode& node)
 
 	if (type == constraint_type::EDGE) // Edge conflict
 	{
-		cardinal1 = mdd1->levels[timestep].size() == 1 && mdd1->levels[timestep - 1].size() == 1;
-		cardinal2 = mdd2->levels[timestep].size() == 1 && mdd2->levels[timestep - 1].size() == 1;
+		if (!cardinal1 && mdd1 != nullptr && timestep > 0 && timestep < static_cast<int>(mdd1->levels.size()))
+			cardinal1 = mdd1->levels[timestep].size() == 1 && mdd1->levels[timestep - 1].size() == 1;
+		if (!cardinal2 && mdd2 != nullptr && timestep > 0 && timestep < static_cast<int>(mdd2->levels.size()))
+			cardinal2 = mdd2->levels[timestep].size() == 1 && mdd2->levels[timestep - 1].size() == 1;
 	}
 	else // vertex conflict or target conflict
 	{

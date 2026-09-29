@@ -730,14 +730,14 @@ void ECBS::computeConflictPriority(shared_ptr<Conflict>& con, ECBSNode& node)
 
 	if (type == constraint_type::EDGE) // Edge conflict
 	{
-		if (timestep < (int)mdd1->levels.size())
+		if (!cardinal1 && mdd1 != nullptr && timestep > 0 && timestep < (int)mdd1->levels.size())
 		{
 			cardinal1 = mdd1->levels[timestep].size() == 1 &&
 				mdd1->levels[timestep].front()->location == paths[a1]->at(timestep).location &&
 				mdd1->levels[timestep - 1].size() == 1 &&
 				mdd1->levels[timestep - 1].front()->location == paths[a1]->at(timestep - 1).location;
 		}
-		if (timestep < (int)mdd2->levels.size())
+		if (!cardinal2 && mdd2 != nullptr && timestep > 0 && timestep < (int)mdd2->levels.size())
 		{
 			cardinal2 = mdd2->levels[timestep].size() == 1 &&
 				mdd2->levels[timestep].front()->location == paths[a2]->at(timestep).location &&

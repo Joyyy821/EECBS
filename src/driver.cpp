@@ -174,11 +174,17 @@ int main(int argc, char** argv)
 		double radius = 0.0;
 		while (radii >> radius)
 			agent_radii.push_back(radius);
-		if (agent_radii.empty())
+		if (agent_radii.size() != static_cast<size_t>(instance.getDefaultNumberOfAgents()))
 		{
-			cerr << "agentRadiiFile is empty" << endl;
+			cerr << "agentRadiiFile must contain exactly one radius per agent" << endl;
 			return -1;
 		}
+		for (double radius : agent_radii)
+			if (radius <= 0.0)
+			{
+				cerr << "agent radii must be positive" << endl;
+				return -1;
+			}
 	}
 	const ClearanceModel clearance_model(clearance_mode_value, grid_resolution,
 		planning_clearance, clearance_margin, agent_radii);

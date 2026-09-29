@@ -75,6 +75,10 @@ std::ostream& operator<<(std::ostream& os, const Conflict& conflict)
 		case conflict_type::MUTEX:
 			os << "mutex";
 			break;
+		case conflict_type::CLEARANCE:
+			os << "clearance(d=" << conflict.min_distance << ",required="
+			   << conflict.required_clearance << ",tau=" << conflict.tau << ")";
+			break;
 	    case conflict_type::TYPE_COUNT:
             break;
     }
@@ -103,4 +107,3 @@ bool operator < (const Conflict& conflict1, const Conflict& conflict2) // return
 	}
 	return conflict1.priority > conflict2.priority;
 }
-

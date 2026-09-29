@@ -3,6 +3,7 @@
 #include "RectangleReasoning.h"
 #include "CorridorReasoning.h"
 #include "MutexReasoning.h"
+#include "ClearanceModel.h"
 
 enum high_level_solver_type { ASTAR, ASTAREPS, NEW, EES };
 
@@ -27,6 +28,7 @@ public:
 	uint64_t num_target_conflicts = 0;
 	uint64_t num_mutex_conflicts = 0;
 	uint64_t num_standard_conflicts = 0;
+	uint64_t num_clearance_conflicts = 0;
 
 	uint64_t num_adopt_bypass = 0; // number of times when adopting bypasses
 
@@ -71,6 +73,8 @@ public:
 		suboptimality = w;
 	}
 	void setNodeLimit(int n) { node_limit = n; }
+	void setClearanceModel(const ClearanceModel& model) { clearance_model = model; heuristic_helper.setClearanceModel(model); }
+	const ClearanceModel& getClearanceModel() const { return clearance_model; }
 
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// Runs the algorithm until the problem is solved or time is exhausted 
@@ -111,6 +115,7 @@ protected:
 	CorridorReasoning corridor_helper;
 	MutexReasoning mutex_helper;
 	CBSHeuristic heuristic_helper;
+	ClearanceModel clearance_model;
 
 	list<HLNode*> allNodes_table; // this is ued for both ECBS and EES
 

@@ -10,6 +10,7 @@
 #include <boost/program_options.hpp>
 #include <boost/tokenizer.hpp>
 #include "ECBS.h"
+#include "ClearanceModel.h"
 
 
 /* Main function */
@@ -47,6 +48,11 @@ int main(int argc, char** argv)
 		("targetReasoning", po::value<bool>()->default_value(true), "target reasoning")
 		("sipp", po::value<bool>()->default_value(0), "using SIPPS as the low-level solver")
 		("restart", po::value<int>()->default_value(0), "rapid random restart times")
+		("clearanceMode", po::value<string>()->default_value("point"), "clearance model: point, fixed, or radii")
+		("gridResolution", po::value<double>()->default_value(0.0), "planning grid resolution in metres")
+		("planningClearance", po::value<double>()->default_value(0.0), "fixed metric planning clearance in metres")
+		("agentRadiiFile", po::value<string>()->default_value(""), "one effective radius in metres per agent")
+		("clearanceMargin", po::value<double>()->default_value(0.0), "additional radius-mode safety margin")
 		;
 	po::variables_map vm;
 	po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -57,6 +63,7 @@ int main(int argc, char** argv)
 	}
 
 	po::notify(vm);
+	cout << "capability=" << ClearanceModel::capability << endl;
 	if (vm["suboptimality"].as<double>() < 1)
 	{
 		cerr << "Suboptimal bound should be at least 1!" << endl;
@@ -136,6 +143,45 @@ int main(int argc, char** argv)
 		vm["agentNum"].as<int>());
 
 	srand(0);
+	clearance_mode clearance_mode_value = clearance_mode::POINT;
+	const string clearance_mode_name = vm["clearanceMode"].as<string>();
+	if (clearance_mode_name == "fixed")
+		clearance_mode_value = clearance_mode::FIXED;
+	else if (clearance_mode_name == "radii")
+		clearance_mode_value = clearance_mode::RADII;
+	else if (clearance_mode_name != "point")
+	{
+		cerr << "Unknown clearanceMode: " << clearance_mode_name << endl;
+		return -1;
+	}
+	const double grid_resolution = vm["gridResolution"].as<double>();
+	const double planning_clearance = vm["planningClearance"].as<double>();
+	const double clearance_margin = vm["clearanceMargin"].as<double>();
+	vector<double> agent_radii;
+	if (clearance_mode_value == clearance_mode::FIXED && (grid_resolution <= 0 || planning_clearance <= 0))
+	{
+		cerr << "fixed clearance requires positive gridResolution and planningClearance" << endl;
+		return -1;
+	}
+	if (clearance_mode_value == clearance_mode::RADII)
+	{
+		if (grid_resolution <= 0 || vm["agentRadiiFile"].as<string>().empty())
+		{
+			cerr << "radii clearance requires gridResolution and agentRadiiFile" << endl;
+			return -1;
+		}
+		std::ifstream radii(vm["agentRadiiFile"].as<string>());
+		double radius = 0.0;
+		while (radii >> radius)
+			agent_radii.push_back(radius);
+		if (agent_radii.empty())
+		{
+			cerr << "agentRadiiFile is empty" << endl;
+			return -1;
+		}
+	}
+	const ClearanceModel clearance_model(clearance_mode_value, grid_resolution,
+		planning_clearance, clearance_margin, agent_radii);
 	int runs = 1 + vm["restart"].as<int>();
 	//////////////////////////////////////////////////////////////////////
     // initialize the solver
@@ -154,6 +200,7 @@ int main(int argc, char** argv)
         ecbs.setNodeSelectionRule(n);
         ecbs.setSavingStats(vm["stats"].as<bool>());
         ecbs.setHighLevelSolver(s, vm["suboptimality"].as<double>());
+		ecbs.setClearanceModel(clearance_model);
         //////////////////////////////////////////////////////////////////////
         // run
         double runtime = 0;
@@ -196,6 +243,7 @@ int main(int argc, char** argv)
         cbs.setNodeSelectionRule(n);
         cbs.setSavingStats(vm["stats"].as<bool>());
         cbs.setHighLevelSolver(s, vm["suboptimality"].as<double>());
+		cbs.setClearanceModel(clearance_model);
         //////////////////////////////////////////////////////////////////////
         // run
         double runtime = 0;

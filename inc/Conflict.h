@@ -2,7 +2,7 @@
 #include "common.h"
 
 
-enum conflict_type { MUTEX, TARGET, CORRIDOR, RECTANGLE, STANDARD, TYPE_COUNT };
+enum conflict_type { MUTEX, TARGET, CORRIDOR, RECTANGLE, STANDARD, CLEARANCE, TYPE_COUNT };
 
 enum conflict_priority { CARDINAL, PSEUDO_CARDINAL, SEMI, NON, UNKNOWN, PRIORITY_COUNT };
 // Pseudo-cardinal conflicts are semi-/non-caridnal conflicts between dependent agents. 
@@ -35,6 +35,9 @@ public:
 	conflict_type type;
 	conflict_priority priority = conflict_priority::UNKNOWN;
 	double secondary_priority = 0; // used as the tie-breaking creteria for conflict selection
+	double min_distance = 0.0;
+	double tau = 0.0;
+	double required_clearance = 0.0;
     int getConflictId() const { return int(type); }  // int(PRIORITY_COUNT) * int(type) + int(priority); }
 
 	void vertexConflict(int a1, int a2, int v, int t)
@@ -103,6 +106,30 @@ public:
 		type = conflict_type::MUTEX;
 		priority = conflict_priority::CARDINAL;
 		// TODO add constraints from mutex reasoning
+	}
+
+	void clearanceConflict(int a1, int a2, int from1, int to1, int from2, int to2,
+	                       int timestep, double min_distance, double tau,
+	                       double required_clearance, bool endpoint_vertex)
+	{
+		constraint1.clear();
+		constraint2.clear();
+		this->a1 = a1;
+		this->a2 = a2;
+		this->min_distance = min_distance;
+		this->tau = tau;
+		this->required_clearance = required_clearance;
+		if (endpoint_vertex)
+		{
+			constraint1.emplace_back(a1, to1, -1, timestep, constraint_type::VERTEX);
+			constraint2.emplace_back(a2, to2, -1, timestep, constraint_type::VERTEX);
+		}
+		else
+		{
+			constraint1.emplace_back(a1, from1, to1, timestep + 1, constraint_type::EDGE);
+			constraint2.emplace_back(a2, from2, to2, timestep + 1, constraint_type::EDGE);
+		}
+		type = conflict_type::CLEARANCE;
 	}
 
 

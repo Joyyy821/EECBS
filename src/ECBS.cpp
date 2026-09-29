@@ -179,6 +179,9 @@ bool ECBS::solve(double time_limit, int _cost_lowerbound)
 		case conflict_type::MUTEX:
 			num_mutex_conflicts++;
 			break;
+		case conflict_type::CLEARANCE:
+			num_clearance_conflicts++;
+			break;
 		default:
 			break;
 		}
@@ -622,6 +625,13 @@ void ECBS::classifyConflicts(ECBSNode &node)
                (int)paths[a2]->size() - 1 == min_f_vals[a2]) // the path of at least one agent is its shortest path
 			    computeConflictPriority(con, node);
 
+		if (con->type == conflict_type::CLEARANCE)
+		{
+			computeSecondPriorityForConflict(*con, node);
+			node.conflicts.push_back(con);
+			continue;
+		}
+
 		/*if (con->priority == conflict_priority::CARDINAL && heuristic_helper.type == heuristics_type::ZERO)
 		{
 			computeSecondPriorityForConflict(*con, node);
@@ -785,4 +795,3 @@ void ECBS::clear()
     solution_found = false;
     solution_cost = -2;
 }
-

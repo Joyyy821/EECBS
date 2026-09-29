@@ -2,6 +2,7 @@
 #include "MDD.h"
 #include "RectangleReasoning.h"
 #include "CorridorReasoning.h"
+#include "ClearanceModel.h"
 
 
 enum heuristics_type { ZERO, CG, DG, WDG, GLOBAL, PATH, LOCAL, CONFLICT, STRATEGY_COUNT }; //  GREEDY,
@@ -154,6 +155,8 @@ public:
 							const vector<ConstraintTable>& initial_constraints,
 							MDDTable& mdd_helper) : num_of_agents(num_of_agents),
 		paths(paths), search_engines(search_engines), initial_constraints(initial_constraints), mdd_helper(mdd_helper) {}
+
+	void setClearanceModel(const ClearanceModel& model) { clearance_model = model; }
 	
 	void init()
 	{
@@ -200,6 +203,7 @@ public:
 	void clear() { lookupTable.clear(); }
 
 private:
+	ClearanceModel clearance_model;
     heuristics_type inadmissible_heuristic;
 
 	int screen = 0;
@@ -250,7 +254,6 @@ private:
 	int ILPForConstrainedWMVC(const std::vector<int>& CG, const std::vector<int>& range);
 	int DPForConstrainedWMVC(vector<bool>& x, int i, int sum, const vector<int>& CG, const vector<int>& range, int& best_so_far);
 };
-
 
 
 

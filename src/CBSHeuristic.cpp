@@ -713,6 +713,7 @@ pair<int, int> CBSHeuristic::solve2Agents(int a1, int a2, const CBSNode& node, b
     constraints[0].insert2CT(node, a1);
     constraints[1].insert2CT(node, a2);
 	CBS cbs(engines, constraints, initial_paths, screen);
+	cbs.setClearanceModel(clearance_model);
 	// setUpSubSolver(cbs);
 	cbs.setPrioritizeConflicts(PC);
 	cbs.setHeuristicType(heuristics_type::CG, heuristics_type::ZERO);
@@ -764,6 +765,7 @@ tuple<int, int, int> CBSHeuristic::solve2Agents(int a1, int a2, const ECBSNode& 
     constraints[0].insert2CT(node, a1);
     constraints[1].insert2CT(node, a2);
 	CBS cbs(engines, constraints, initial_paths, screen);
+	cbs.setClearanceModel(clearance_model);
 	// setUpSubSolver(cbs);
 	cbs.setPrioritizeConflicts(PC);
 	cbs.setHeuristicType(heuristics_type::CG, heuristics_type::ZERO);
@@ -859,6 +861,7 @@ int CBSHeuristic::getEdgeWeight(int a1, int a2, CBSNode& node, bool cardinal)
 		constraints[0].build(node, a1);
 		constraints[1].build(node, a2);
 		CBS cbs(engines, constraints, initial_paths, upperbound, screen);
+		cbs.setClearanceModel(clearance_model);
 		cbs.setPrioritizeConflicts(PC);
 		cbs.setHeuristicType(heuristics_type::CG);
 		cbs.setDisjointSplitting(disjoint_splitting);

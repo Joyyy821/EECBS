@@ -124,6 +124,18 @@ void CBS::findConflicts(HLNode& curr, int a1, int a2)
 			}
 		}
 	}
+	if (clearance_model.enabled())
+	{
+		ClearanceConflictData data;
+		if (clearance_model.findFirst(search_engines[a1]->instance, *paths[a1], *paths[a2], a1, a2, data))
+		{
+			shared_ptr<Conflict> conflict(new Conflict());
+			conflict->clearanceConflict(a1, a2, data.a1_from, data.a1_to,
+				data.a2_from, data.a2_to, data.timestep, data.min_distance,
+				data.tau, data.required_clearance, data.vertex_start || data.vertex_end);
+			curr.unknownConf.push_back(conflict);
+		}
+	}
 }
 
 
@@ -218,6 +230,7 @@ void CBS::computeSecondPriorityForConflict(Conflict& conflict, const HLNode& nod
 		case conflict_type::RECTANGLE:
 		case conflict_type::TARGET:
 		case conflict_type::MUTEX:
+		case conflict_type::CLEARANCE:
 			conflict.secondary_priority = get<3>(conflict.constraint1.front());
 			break;
 		case conflict_type::CORRIDOR:
@@ -316,6 +329,15 @@ void CBS::classifyConflicts(CBSNode &node)
 		node.unknownConf.pop_front();
 
 		computeConflictPriority(con, node);
+
+		// Clearance conflicts already carry exact negative vertex/edge splits.
+		// Do not rewrite them using point-agent rectangle/corridor reasoning.
+		if (con->type == conflict_type::CLEARANCE)
+		{
+			computeSecondPriorityForConflict(*con, node);
+			node.conflicts.push_back(con);
+			continue;
+		}
 
 		if (con->priority == conflict_priority::CARDINAL && heuristic_helper.type == heuristics_type::ZERO)
 		{
@@ -951,7 +973,7 @@ void CBS::saveResults(const string &fileName, const string &instanceName) const
 			"solution cost,min f value,root g value, root f value," <<
 			"#adopt bypasses," <<
 			"cardinal conflicts," <<
-			"standard conflicts,rectangle conflicts,corridor conflicts,target conflicts,mutex conflicts," <<
+			"standard conflicts,rectangle conflicts,corridor conflicts,target conflicts,mutex conflicts,clearance conflicts," <<
 			"chosen from cleanup,chosen from open,chosen from focal," <<
 			"#solve MVCs,#merge MDDs,#solve 2 agents,#memoization," <<
 			"cost error,distance error," <<
@@ -973,7 +995,7 @@ void CBS::saveResults(const string &fileName, const string &instanceName) const
 
 		num_adopt_bypass << "," <<
 		num_cardinal_conflicts << "," <<
-		num_standard_conflicts << "," << num_rectangle_conflicts << "," << num_corridor_conflicts << "," << num_target_conflicts << "," << num_mutex_conflicts << "," <<
+		num_standard_conflicts << "," << num_rectangle_conflicts << "," << num_corridor_conflicts << "," << num_target_conflicts << "," << num_mutex_conflicts << "," << num_clearance_conflicts << "," <<
 
 		num_cleanup << "," << num_open << "," << num_focal << "," <<
 
@@ -1682,6 +1704,18 @@ bool CBS::validateSolution() const
 	{
 		cout << "The solution cost is wrong!" << endl;
 		return false;
+	}
+	if (clearance_model.enabled())
+	{
+		vector<Path> final_paths;
+		final_paths.reserve(num_of_agents);
+		for (int agent = 0; agent < num_of_agents; ++agent)
+			final_paths.push_back(*paths[agent]);
+		if (!clearance_model.validate(search_engines[0]->instance, final_paths))
+		{
+			cout << "Metric clearance validation failed!" << endl;
+			return false;
+		}
 	}
 	return true;
 }
